@@ -66,8 +66,18 @@ export default function CaloriesPage() {
   const [photoFoods, setPhotoFoods] = useState<VisionFood[]>([])
   const [photoMeal, setPhotoMeal] = useState<MealType>('lunch')
   const [selectedPhotoIdx, setSelectedPhotoIdx] = useState<number[]>([])
+  const [collapsedMeals, setCollapsedMeals] = useState<Set<MealType>>(new Set())
+  const [photoGrams, setPhotoGrams] = useState<Record<number, number>>({})
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const fileMealRef = useRef<MealType>('lunch')
+
+  const toggleMealCollapse = (meal: MealType) => {
+    setCollapsedMeals(prev => {
+      const next = new Set(prev)
+      next.has(meal) ? next.delete(meal) : next.add(meal)
+      return next
+    })
+  }
 
   const filteredFoods = FOODS.filter((food) =>
     food.name.includes(search) || food.id.includes(search.toLowerCase())
@@ -129,6 +139,9 @@ export default function CaloriesPage() {
       }
       setPhotoFoods(foods)
       setSelectedPhotoIdx(foods.map((_: VisionFood, index: number) => index))
+      const initGrams: Record<number, number> = {}
+      foods.forEach((f: VisionFood, i: number) => { initGrams[i] = f.grams || 100 })
+      setPhotoGrams(initGrams)
     } catch {
       alert('识别失败，请重试')
     } finally {
@@ -185,36 +198,34 @@ export default function CaloriesPage() {
   const closePhotoModal = () => {
     setPhotoFoods([])
     setSelectedPhotoIdx([])
+    setPhotoGrams({})
   }
 
   const confirmPhotoFoods = () => {
-    const entries = selectedPhotoIdx.map((index) => {
+    selectedPhotoIdx.forEach((index) => {
       const food = photoFoods[index]
       const normalizedName = food.name.trim()
+      const grams = photoGrams[index] || food.grams || 100
 
-      // Cache hit: reuse existing customFood by name, skip AI recalculation
+      // Cache hit: reuse existing customFood by name
       const existing = customFoods.find((item) => item.name === normalizedName)
-      if (existing) {
-        return { foodId: existing.id, amount: food.grams || 100 }
+      const foodId = existing ? existing.id : `ai-${normalizedName.replace(/[\s/]/g, '-')}`
+
+      if (!existing) {
+        addCustomFood({
+          id: foodId,
+          name: normalizedName,
+          caloriesPer100g: food.grams > 0 ? Math.round(food.calories * 100 / food.grams) : food.calories,
+          proteinPer100g: food.grams > 0 ? Math.round(food.protein * 1000 / food.grams) / 10 : food.protein,
+          carbsPer100g: food.grams > 0 ? Math.round(food.carbs * 1000 / food.grams) / 10 : food.carbs,
+          fatPer100g: food.grams > 0 ? Math.round(food.fat * 1000 / food.grams) / 10 : food.fat,
+          unit: '克',
+        })
       }
 
-      // Cache miss: create and persist new customFood with stable name-based ID
-      const customId = `ai-${normalizedName.replace(/[\s/]/g, '-')}`
-      addCustomFood({
-        id: customId,
-        name: normalizedName,
-        caloriesPer100g: food.grams > 0 ? Math.round(food.calories * 100 / food.grams) : food.calories,
-        proteinPer100g: food.grams > 0 ? Math.round(food.protein * 1000 / food.grams) / 10 : food.protein,
-        carbsPer100g: food.grams > 0 ? Math.round(food.carbs * 1000 / food.grams) / 10 : food.carbs,
-        fatPer100g: food.grams > 0 ? Math.round(food.fat * 1000 / food.grams) / 10 : food.fat,
-        unit: '克',
-      })
-      return { foodId: customId, amount: food.grams || 100 }
+      // Each food gets its own record so it can be deleted independently
+      addRecord(date, photoMeal, [{ foodId, amount: grams }])
     })
-
-    if (entries.length > 0) {
-      addRecord(date, photoMeal, entries)
-    }
     closePhotoModal()
   }
 
@@ -288,53 +299,71 @@ export default function CaloriesPage() {
         {MEALS.map((meal) => {
           const mealRecords = records.filter((record) => record.meal === meal)
           const isUploadingThisMeal = photoLoading && photoMeal === meal
+          const isCollapsed = collapsedMeals.has(meal)
+          const mealCalories = mealRecords.flatMap(r => r.entries).reduce((sum, entry) => {
+            const s = getEntrySummary(entry, customFoods)
+            return sum + (s?.calories ?? 0)
+          }, 0)
           return (
             <div key={meal} className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 gap-3">
-                <div>
+              <div className="flex items-center justify-between px-4 py-3 gap-3">
+                <button
+                  className="flex items-center gap-2 flex-1 text-left"
+                  onClick={() => toggleMealCollapse(meal)}
+                >
                   <span className="font-semibold text-gray-800">{MEAL_LABELS[meal]}</span>
-                  <span className="text-xs text-gray-400 ml-2">{MEAL_TIMES[meal]}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-medium">
-                  <button
-                    onClick={() => openPhotoPicker(meal)}
-                    disabled={photoLoading}
-                    className="text-purple-600 disabled:opacity-40 active:opacity-70"
-                  >
-                    {isUploadingThisMeal ? '识图中…' : '📷 AI识图'}
-                  </button>
-                  <button
-                    onClick={() => setAdding(meal)}
-                    className="text-green-600 active:opacity-70"
-                  >
-                    + 添加
-                  </button>
-                </div>
+                  <span className="text-xs text-gray-400">{MEAL_TIMES[meal]}</span>
+                  {mealCalories > 0 && (
+                    <span className="text-xs text-orange-500 ml-1">{Math.round(mealCalories)} kcal</span>
+                  )}
+                  <span className="text-gray-300 text-xs ml-auto">{isCollapsed ? '▶' : '▼'}</span>
+                </button>
+                {!isCollapsed && (
+                  <div className="flex items-center gap-3 text-sm font-medium">
+                    <button
+                      onClick={() => openPhotoPicker(meal)}
+                      disabled={photoLoading}
+                      className="text-purple-600 disabled:opacity-40 active:opacity-70"
+                    >
+                      {isUploadingThisMeal ? '识图中…' : '📷 AI识图'}
+                    </button>
+                    <button
+                      onClick={() => setAdding(meal)}
+                      className="text-green-600 active:opacity-70"
+                    >
+                      + 添加
+                    </button>
+                  </div>
+                )}
               </div>
-              {mealRecords.length === 0 ? (
-                <p className="text-sm text-gray-400 px-4 py-3">暂未记录</p>
-              ) : (
-                mealRecords.map((record) =>
-                  record.entries.map((entry) => {
-                    const summary = getEntrySummary(entry, customFoods)
-                    if (!summary) return null
-                    return (
-                      <div key={`${record.id}-${entry.foodId}`} className="flex items-center justify-between px-4 py-2 border-b border-gray-50 last:border-0">
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">{summary.name}</p>
-                          <p className="text-xs text-gray-400">{entry.amount}{summary.unit}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <span className="text-sm text-orange-500 font-medium">{Math.round(summary.calories)} kcal</span>
-                            <span className="text-xs text-blue-400 ml-2">{Math.round(summary.protein)}g 蛋白</span>
+              {!isCollapsed && (
+                <div className="border-t border-gray-100">
+                  {mealRecords.length === 0 ? (
+                    <p className="text-sm text-gray-400 px-4 py-3">暂未记录</p>
+                  ) : (
+                    mealRecords.map((record) =>
+                      record.entries.map((entry) => {
+                        const summary = getEntrySummary(entry, customFoods)
+                        if (!summary) return null
+                        return (
+                          <div key={`${record.id}-${entry.foodId}`} className="flex items-center justify-between px-4 py-2 border-b border-gray-50 last:border-0">
+                            <div>
+                              <p className="text-sm font-medium text-gray-700">{summary.name}</p>
+                              <p className="text-xs text-gray-400">{entry.amount}{summary.unit}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <span className="text-sm text-orange-500 font-medium">{Math.round(summary.calories)} kcal</span>
+                                <span className="text-xs text-blue-400 ml-2">{Math.round(summary.protein)}g 蛋白</span>
+                              </div>
+                              <button onClick={() => removeRecord(record.id)} className="text-gray-300 active:text-red-400">✕</button>
+                            </div>
                           </div>
-                          <button onClick={() => removeRecord(record.id)} className="text-gray-300 active:text-red-400">✕</button>
-                        </div>
-                      </div>
+                        )
+                      })
                     )
-                  })
-                )
+                  )}
+                </div>
               )}
             </div>
           )
@@ -415,20 +444,23 @@ export default function CaloriesPage() {
                   {photoFoods.map((food, index) => {
                     const checked = selectedPhotoIdx.includes(index)
                     const isCached = customFoods.some((item) => item.name === food.name.trim())
+                    const grams = photoGrams[index] ?? food.grams ?? 100
+                    const factor = food.grams > 0 ? grams / food.grams : 1
+                    const displayCal = Math.round(food.calories * factor)
                     return (
-                      <button
+                      <div
                         key={`${food.name}-${index}`}
-                        onClick={() => togglePhotoSelection(index)}
-                        className={`w-full text-left rounded-xl border px-4 py-3 transition-colors ${
+                        className={`rounded-xl border px-4 py-3 transition-colors ${
                           checked ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center ${
-                            checked ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 text-transparent'
-                          }`}>
-                            ✓
-                          </div>
+                          <button
+                            className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${
+                              checked ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 text-transparent'
+                            }`}
+                            onClick={() => togglePhotoSelection(index)}
+                          >✓</button>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1.5">
@@ -437,13 +469,23 @@ export default function CaloriesPage() {
                                   <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-medium">已缓存</span>
                                 )}
                               </div>
-                              <span className="text-sm text-orange-500 font-medium">{Math.round(food.calories)} kcal</span>
+                              <span className="text-sm text-orange-500 font-medium">{displayCal} kcal</span>
                             </div>
-                            <p className="text-sm text-gray-500 mt-1">{food.amount} · 约{food.grams || 100}克</p>
-                            <p className="text-xs text-gray-400 mt-1">蛋白 {food.protein}g · 碳水 {food.carbs}g · 脂肪 {food.fat}g</p>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <input
+                                type="number"
+                                min={1}
+                                value={grams}
+                                onChange={(e) => setPhotoGrams(prev => ({ ...prev, [index]: Number(e.target.value) || 1 }))}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-16 border border-gray-200 rounded px-2 py-0.5 text-sm text-center outline-none focus:border-green-400"
+                              />
+                              <span className="text-sm text-gray-400">克</span>
+                              <span className="text-xs text-gray-400 ml-1">蛋白 {(food.protein * factor).toFixed(1)}g · 碳水 {(food.carbs * factor).toFixed(1)}g</span>
+                            </div>
                           </div>
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>

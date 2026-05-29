@@ -1,6 +1,8 @@
+import { useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
 import { useCheckinStore } from '../../store/checkinStore'
-import { useMealStore } from '../../store/mealStore'
+import { useMealStore, calcNutrition } from '../../store/mealStore'
 
 const DAYS = 28
 
@@ -22,17 +24,24 @@ function getWorkoutCount(record: { completedIds: string[]; selectedExerciseIds: 
 export default function ProgressPage() {
   const records = useCheckinStore((state) => state.records)
   const streak = useCheckinStore((state) => state.getStreak())
-  const getDayNutrition = useMealStore((state) => state.getDayNutrition)
+  const mealRecords = useMealStore((state) => state.records)
+  const customFoods = useMealStore(useShallow((state) => state.customFoods))
 
   const dates = getDateRange()
   const checkinMap = new Map(records.map((record) => [record.date, getWorkoutCount(record)]))
-
   const totalCheckins = records.filter((record) => getWorkoutCount(record) > 0).length
+
   const last7 = dates.slice(-7)
-  const last7Avg = last7.reduce((sum, date) => {
-    const nutrition = getDayNutrition(date)
-    return sum + nutrition.calories
-  }, 0) / 7
+  const nutritionByDate = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const date of last7) {
+      const entries = mealRecords.filter(r => r.date === date).flatMap(r => r.entries)
+      map[date] = calcNutrition(entries, customFoods).calories
+    }
+    return map
+  }, [mealRecords, customFoods, last7.join()])
+
+  const last7Avg = last7.reduce((sum, date) => sum + (nutritionByDate[date] ?? 0), 0) / 7
 
   return (
     <div>
@@ -76,16 +85,16 @@ export default function ProgressPage() {
           <h2 className="font-semibold text-gray-700 mb-3">近7天热量摄入</h2>
           <div className="flex items-end gap-2 h-24">
             {last7.map((date) => {
-              const nutrition = getDayNutrition(date)
+                const calories = nutritionByDate[date] ?? 0
               const maxCal = 2500
-              const pct = Math.min((nutrition.calories / maxCal) * 100, 100)
+                const pct = Math.min((calories / maxCal) * 100, 100)
               const label = new Date(date).getDate()
               return (
                 <div key={date} className="flex-1 flex flex-col items-center gap-1">
                   <div className="w-full flex flex-col justify-end" style={{ height: '80px' }}>
                     <div
                       className="w-full bg-green-500 rounded-t-sm transition-all"
-                      style={{ height: `${pct}%`, minHeight: nutrition.calories > 0 ? '4px' : '0' }}
+                      style={{ height: `${pct}%`, minHeight: calories > 0 ? '4px' : '0' }}
                     />
                   </div>
                   <span className="text-xs text-gray-400">{label}</span>
