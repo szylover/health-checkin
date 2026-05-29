@@ -2,6 +2,10 @@
   "name": "eat-what-api",
   "version": "1.0.0",
   "private": true,
-  "engines": { "node": ">=18" },
-  "dependencies": {}
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.16.0"
+  }
 }

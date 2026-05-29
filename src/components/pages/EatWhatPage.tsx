@@ -112,11 +112,40 @@ export default function EatWhatPage() {
         }),
       })
       if (!resp.ok) throw new Error(`请求失败 (${resp.status})`)
-      const data = await resp.json()
-      setAiResult(data.plan || 'AI 暂无响应')
+
+      const contentType = resp.headers.get('content-type') || ''
+      if (contentType.includes('text/event-stream')) {
+        setAiLoading(false)
+        const reader = resp.body!.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        let accumulated = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            const data = line.slice(6).trim()
+            if (data === '[DONE]') continue
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed.text) {
+                accumulated += parsed.text
+                setAiResult(accumulated)
+              }
+            } catch {}
+          }
+        }
+      } else {
+        const data = await resp.json()
+        setAiResult(data.plan || 'AI 暂无响应')
+        setAiLoading(false)
+      }
     } catch (e: unknown) {
       setAiResult(`<div style="color:#ef4444">⚠️ ${(e as Error).message}</div>`)
-    } finally {
       setAiLoading(false)
     }
   }
