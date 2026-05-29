@@ -70,7 +70,7 @@ export default function HomePage() {
           className="bg-white rounded-xl p-4 shadow-sm cursor-pointer active:bg-gray-50"
           onClick={() => navigate('/calories')}
         >
-          <h2 className="font-semibold text-gray-800 mb-3">今日热量</h2>
+          <h2 className="font-semibold text-gray-800 mb-3">今日饮食</h2>
           <div className="grid grid-cols-2 gap-3">
             <NutritionCard label="总热量" value={`${Math.round(nutrition.calories)}`} unit="kcal" color="text-orange-500" />
             <NutritionCard label="蛋白质" value={`${Math.round(nutrition.protein)}`} unit="g" color="text-blue-500" />

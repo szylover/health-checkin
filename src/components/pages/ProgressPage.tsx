@@ -50,7 +50,7 @@ export default function ProgressPage() {
         <div className="grid grid-cols-3 gap-3">
           <StatCard label="连续打卡" value={`${streak}天`} icon="🔥" />
           <StatCard label="总打卡天数" value={`${totalCheckins}天`} icon="📅" />
-          <StatCard label="近7天均热量" value={`${Math.round(last7Avg)}`} sub="kcal" icon="🍽️" />
+          <StatCard label="近7天均摄入" value={`${Math.round(last7Avg)}`} sub="kcal" icon="🍽️" />
         </div>
 
         <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -82,7 +82,7 @@ export default function ProgressPage() {
         </div>
 
         <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-700 mb-3">近7天热量摄入</h2>
+          <h2 className="font-semibold text-gray-700 mb-3">近7天饮食摄入</h2>
           <div className="flex items-end gap-2 h-24">
             {(() => {
               const maxCal = Math.max(...last7.map((d) => nutritionByDate[d] ?? 0), 100)

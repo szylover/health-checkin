@@ -1,7 +1,7 @@
 export const TAB_LABELS = {
   home: '首页',
   checkin: '打卡',
-  calories: '热量',
+  calories: '饮食',
   plan: '计划',
   progress: '进度',
 } as const
