@@ -2,8 +2,9 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export interface CheckinRecord {
-  date: string           // 'YYYY-MM-DD'
-  completedIds: string[] // exercise ids
+  date: string
+  completedIds: string[]
+  selectedExerciseIds: string[]
   note: string
 }
 
@@ -11,6 +12,7 @@ interface CheckinStore {
   records: CheckinRecord[]
   getRecord: (date: string) => CheckinRecord
   toggleExercise: (date: string, exerciseId: string) => void
+  setDayExercises: (date: string, ids: string[]) => void
   setNote: (date: string, note: string) => void
   getStreak: () => number
 }
@@ -23,14 +25,14 @@ export const useCheckinStore = create<CheckinStore>()(
       records: [],
 
       getRecord: (date) => {
-        return get().records.find((r) => r.date === date) ?? { date, completedIds: [], note: '' }
+        return get().records.find((r) => r.date === date) ?? { date, completedIds: [], selectedExerciseIds: [], note: '' }
       },
 
       toggleExercise: (date, exerciseId) => {
         set((state) => {
           const existing = state.records.find((r) => r.date === date)
           if (!existing) {
-            return { records: [...state.records, { date, completedIds: [exerciseId], note: '' }] }
+            return { records: [...state.records, { date, completedIds: [exerciseId], selectedExerciseIds: [], note: '' }] }
           }
           const alreadyDone = existing.completedIds.includes(exerciseId)
           const completedIds = alreadyDone
@@ -42,11 +44,23 @@ export const useCheckinStore = create<CheckinStore>()(
         })
       },
 
+      setDayExercises: (date, ids) => {
+        set((state) => {
+          const existing = state.records.find((r) => r.date === date)
+          if (!existing) {
+            return { records: [...state.records, { date, completedIds: [], selectedExerciseIds: ids, note: '' }] }
+          }
+          return {
+            records: state.records.map((r) => r.date === date ? { ...r, selectedExerciseIds: ids } : r),
+          }
+        })
+      },
+
       setNote: (date, note) => {
         set((state) => {
           const existing = state.records.find((r) => r.date === date)
           if (!existing) {
-            return { records: [...state.records, { date, completedIds: [], note }] }
+            return { records: [...state.records, { date, completedIds: [], selectedExerciseIds: [], note }] }
           }
           return { records: state.records.map((r) => r.date === date ? { ...r, note } : r) }
         })
@@ -59,8 +73,7 @@ export const useCheckinStore = create<CheckinStore>()(
         while (true) {
           const key = d.toISOString().split('T')[0]
           const rec = records.find((r) => r.date === key)
-          if (!rec || rec.completedIds.length === 0) {
-            // allow today to be empty and still count streak from yesterday
+          if (!rec || (rec.completedIds.length === 0 && rec.selectedExerciseIds.length === 0)) {
             if (key === today() && streak === 0) {
               d.setDate(d.getDate() - 1)
               continue

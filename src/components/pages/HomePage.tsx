@@ -1,5 +1,4 @@
 import PageHeader from '../shared/PageHeader'
-import { useWorkoutStore } from '../../store/workoutStore'
 import { useCheckinStore } from '../../store/checkinStore'
 import { useMealStore } from '../../store/mealStore'
 import { UI } from '../../data/texts'
@@ -8,25 +7,20 @@ import { useNavigate } from 'react-router-dom'
 const todayKey = () => new Date().toISOString().split('T')[0]
 
 export default function HomePage() {
-  const getActive = useWorkoutStore((s) => s.getActiveTemplate)
-  const template = getActive()
-  const getRecord = useCheckinStore((s) => s.getRecord)
-  const record = getRecord(todayKey())
-  const getDayNutrition = useMealStore((s) => s.getDayNutrition)
-  const nutrition = getDayNutrition(todayKey())
-  const streak = useCheckinStore((s) => s.getStreak())
+  const date = todayKey()
+  const record = useCheckinStore((state) => state.getRecord(date))
+  const nutrition = useMealStore((state) => state.getDayNutrition(date))
+  const streak = useCheckinStore((state) => state.getStreak())
   const navigate = useNavigate()
 
-  const total = template.exercises.length
-  const done = record.completedIds.length
+  const total = record.selectedExerciseIds.length
+  const done = record.completedIds.filter((id) => record.selectedExerciseIds.includes(id)).length
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
 
   return (
     <div>
       <PageHeader title="饮食运动计划" />
       <div className="p-4 space-y-4">
-
-        {/* Streak */}
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
           <span className="text-3xl">🔥</span>
           <div>
@@ -35,14 +29,13 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Today workout summary */}
         <div
           className="bg-white rounded-xl p-4 shadow-sm cursor-pointer active:bg-gray-50"
           onClick={() => navigate('/checkin')}
         >
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-800">今日训练</h2>
-            <span className="text-sm text-gray-400">{template.name}</span>
+            <span className="text-sm text-gray-400">{total > 0 ? '自定义清单' : '待选择'}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex-1 bg-gray-100 rounded-full h-3">
@@ -53,12 +46,13 @@ export default function HomePage() {
             </div>
             <span className="text-sm font-medium text-green-600">{done}/{total}</span>
           </div>
-          {done === total && total > 0 && (
+          {total === 0 ? (
+            <p className="text-sm text-gray-400 mt-2">去选择今日训练动作</p>
+          ) : done === total ? (
             <p className="text-sm text-green-600 mt-2">{UI.allDone}</p>
-          )}
+          ) : null}
         </div>
 
-        {/* Today nutrition summary */}
         <div
           className="bg-white rounded-xl p-4 shadow-sm cursor-pointer active:bg-gray-50"
           onClick={() => navigate('/calories')}
@@ -72,7 +66,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => navigate('/checkin')}
