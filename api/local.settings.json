@@ -3,7 +3,7 @@
   "Values": {
     "AzureWebJobsStorage": "",
     "FUNCTIONS_WORKER_RUNTIME": "node",
-    "AZURE_OPENAI_ENDPOINT": "https://open-gpt-4.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2025-01-01-preview",
+    "AZURE_OPENAI_ENDPOINT": "https://open-gpt-4.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2025-01-01-preview",
     "AZURE_OPENAI_API_KEY": "590152c553784888a64c2713f1894b4c"
   }
 }
