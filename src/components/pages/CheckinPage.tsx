@@ -4,7 +4,13 @@ import { useCheckinStore } from '../../store/checkinStore'
 import { EXERCISES, MUSCLE_EMOJIS, MUSCLE_GROUPS, getExercisesByGroup, type MuscleGroup } from '../../data/exercises'
 
 const todayKey = () => new Date().toISOString().split('T')[0]
-const DEFAULT_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], note: '' }
+const DEFAULT_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], exerciseAmounts: {} as Record<string, { sets: number; reps: number }>, note: '' }
+
+// Parse default reps string (e.g. "8-10" → 10, "15" → 15)
+function parseReps(repsStr: string): number {
+  const parts = repsStr.split('-')
+  return parseInt(parts[parts.length - 1], 10) || 10
+}
 
 const EQUIPMENT_COLORS: Record<string, string> = {
   杠铃: 'bg-red-100 text-red-700',
@@ -20,6 +26,7 @@ export default function CheckinPage() {
   const record = useMemo(() => records.find(r => r.date === date) ?? DEFAULT_RECORD, [records, date])
   const toggleExercise = useCheckinStore((state) => state.toggleExercise)
   const setDayExercises = useCheckinStore((state) => state.setDayExercises)
+  const setExerciseAmount = useCheckinStore((state) => state.setExerciseAmount)
   const [selecting, setSelecting] = useState(record.selectedExerciseIds.length === 0)
   const [selectedGroups, setSelectedGroups] = useState<MuscleGroup[]>([])
   const [pendingIds, setPendingIds] = useState<string[]>(record.selectedExerciseIds)
@@ -168,6 +175,9 @@ export default function CheckinPage() {
         {selectedExercises.map((exercise) => {
           const isDone = record.completedIds.includes(exercise.id)
           const isExpanded = expandedId === exercise.id
+          const override = (record.exerciseAmounts ?? {})[exercise.id]
+          const sets = override?.sets ?? exercise.sets
+          const reps = override?.reps ?? parseReps(exercise.reps)
           return (
             <div
               key={exercise.id}
@@ -194,14 +204,39 @@ export default function CheckinPage() {
                       {exercise.equipment}
                     </span>
                   </div>
-                  <p className="text-xs text-green-600 font-semibold mt-0.5">{exercise.sets}组 × {exercise.reps}</p>
+                  <p className="text-xs text-green-600 font-semibold mt-0.5">{sets}组 × {reps}次</p>
                 </button>
                 <span className="text-gray-300 text-xs">{isExpanded ? '▲' : '▼'}</span>
               </div>
               {isExpanded && (
                 <div className="px-4 pb-3 border-t border-gray-50">
                   <p className="text-sm text-gray-500 mt-2">💡 {exercise.tip}</p>
-                  <p className="text-xs text-gray-400 mt-1">肌群：{exercise.muscleGroup}</p>
+                  <div className="flex gap-6 mt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 w-8">组数</span>
+                      <button
+                        onClick={() => setExerciseAmount(date, exercise.id, Math.max(1, sets - 1), reps)}
+                        className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-base active:bg-gray-200"
+                      >−</button>
+                      <span className="text-sm font-semibold w-5 text-center">{sets}</span>
+                      <button
+                        onClick={() => setExerciseAmount(date, exercise.id, sets + 1, reps)}
+                        className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-base active:bg-gray-200"
+                      >+</button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 w-8">次数</span>
+                      <button
+                        onClick={() => setExerciseAmount(date, exercise.id, sets, Math.max(1, reps - 1))}
+                        className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-base active:bg-gray-200"
+                      >−</button>
+                      <span className="text-sm font-semibold w-5 text-center">{reps}</span>
+                      <button
+                        onClick={() => setExerciseAmount(date, exercise.id, sets, reps + 1)}
+                        className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-base active:bg-gray-200"
+                      >+</button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

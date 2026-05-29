@@ -5,6 +5,7 @@ export interface CheckinRecord {
   date: string
   completedIds: string[]
   selectedExerciseIds: string[]
+  exerciseAmounts: Record<string, { sets: number; reps: number }>
   note: string
 }
 
@@ -13,6 +14,7 @@ interface CheckinStore {
   getRecord: (date: string) => CheckinRecord
   toggleExercise: (date: string, exerciseId: string) => void
   setDayExercises: (date: string, ids: string[]) => void
+  setExerciseAmount: (date: string, exerciseId: string, sets: number, reps: number) => void
   setNote: (date: string, note: string) => void
   getStreak: () => number
 }
@@ -25,14 +27,14 @@ export const useCheckinStore = create<CheckinStore>()(
       records: [],
 
       getRecord: (date) => {
-        return get().records.find((r) => r.date === date) ?? { date, completedIds: [], selectedExerciseIds: [], note: '' }
+        return get().records.find((r) => r.date === date) ?? { date, completedIds: [], selectedExerciseIds: [], exerciseAmounts: {}, note: '' }
       },
 
       toggleExercise: (date, exerciseId) => {
         set((state) => {
           const existing = state.records.find((r) => r.date === date)
           if (!existing) {
-            return { records: [...state.records, { date, completedIds: [exerciseId], selectedExerciseIds: [], note: '' }] }
+            return { records: [...state.records, { date, completedIds: [exerciseId], selectedExerciseIds: [], exerciseAmounts: {}, note: '' }] }
           }
           const alreadyDone = existing.completedIds.includes(exerciseId)
           const completedIds = alreadyDone
@@ -48,10 +50,24 @@ export const useCheckinStore = create<CheckinStore>()(
         set((state) => {
           const existing = state.records.find((r) => r.date === date)
           if (!existing) {
-            return { records: [...state.records, { date, completedIds: [], selectedExerciseIds: ids, note: '' }] }
+            return { records: [...state.records, { date, completedIds: [], selectedExerciseIds: ids, exerciseAmounts: {}, note: '' }] }
           }
           return {
             records: state.records.map((r) => r.date === date ? { ...r, selectedExerciseIds: ids } : r),
+          }
+        })
+      },
+
+      setExerciseAmount: (date, exerciseId, sets, reps) => {
+        set((state) => {
+          const existing = state.records.find((r) => r.date === date)
+          if (!existing) {
+            return { records: [...state.records, { date, completedIds: [], selectedExerciseIds: [], exerciseAmounts: { [exerciseId]: { sets, reps } }, note: '' }] }
+          }
+          return {
+            records: state.records.map((r) => r.date === date
+              ? { ...r, exerciseAmounts: { ...(r.exerciseAmounts ?? {}), [exerciseId]: { sets, reps } } }
+              : r),
           }
         })
       },
@@ -60,7 +76,7 @@ export const useCheckinStore = create<CheckinStore>()(
         set((state) => {
           const existing = state.records.find((r) => r.date === date)
           if (!existing) {
-            return { records: [...state.records, { date, completedIds: [], selectedExerciseIds: [], note }] }
+            return { records: [...state.records, { date, completedIds: [], selectedExerciseIds: [], exerciseAmounts: {}, note }] }
           }
           return { records: state.records.map((r) => r.date === date ? { ...r, note } : r) }
         })
