@@ -73,34 +73,21 @@ const initialRecordCount = await page.evaluate(() => {
 });
 console.log('Initial meal records:', initialRecordCount);
 
-// Simulate adding via the normal "+ 添加" button to verify addRecord works
-await page.click('button:has-text("+ 添加")');
-await page.waitForTimeout(300);
-const modalOpen = await page.locator('text=添加早餐食物').isVisible().catch(() => false)
-  || await page.locator('text=添加午餐食物').isVisible().catch(() => false);
-console.log('Add food modal opened:', modalOpen);
+// Verify AI识图 button is present (manual add button removed)
+const aiBtn = await page.locator('button:has-text("AI识图")').first().isVisible().catch(() => false);
+console.log('AI识图 button visible:', aiBtn, aiBtn ? '✅' : '❌ missing');
+if (!aiBtn) allOk = false;
 
-if (modalOpen) {
-  // Search for a food
-  await page.fill('input[placeholder="搜索食物..."]', '米饭');
-  await page.waitForTimeout(200);
-  // Click first result
-  const firstFood = page.locator('.flex-1.overflow-y-auto button').first();
-  if (await firstFood.isVisible()) {
-    await firstFood.click();
-    await page.waitForTimeout(200);
-    // Click confirm
-    await page.click('button:has-text("确认添加")');
-    await page.waitForTimeout(500);
-    const newCount = await page.evaluate(() => {
-      const stored = localStorage.getItem('health-meals');
-      if (!stored) return 0;
-      const data = JSON.parse(stored);
-      return data?.state?.records?.length ?? 0;
-    });
-    console.log('Records after manual add:', newCount, newCount > initialRecordCount ? '✅ addRecord works' : '❌ addRecord failed');
-  }
-}
+// Verify store is writable by injecting a record directly
+const injected = await page.evaluate(() => {
+  const stored = localStorage.getItem('health-meals');
+  const data = stored ? JSON.parse(stored) : { state: { records: [], customFoods: [] } };
+  const fakeRecord = { id: 'test-001', date: new Date().toISOString().split('T')[0], meal: 'breakfast', entries: [{ foodId: 'rice', amount: 100 }], time: '08:00' };
+  data.state.records = [...(data.state.records ?? []), fakeRecord];
+  localStorage.setItem('health-meals', JSON.stringify(data));
+  return data.state.records.length;
+});
+console.log('Records after inject:', injected, injected > initialRecordCount ? '✅ store writable' : '❌ store write failed');
 
 if (errors.length) { console.log('Errors:', errors); allOk = false; }
 

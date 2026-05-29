@@ -48,6 +48,7 @@ export default function CaloriesPage() {
   const customFoods = useMealStore(useShallow(state => state.customFoods))
   const addRecord = useMealStore((state) => state.addRecord)
   const removeEntry = useMealStore((state) => state.removeEntry)
+  const updateEntry = useMealStore((state) => state.updateEntry)
   const addCustomFood = useMealStore((state) => state.addCustomFood)
 
   const records = useMemo(() => allRecords.filter(r => r.date === date), [allRecords, date])
@@ -68,6 +69,7 @@ export default function CaloriesPage() {
   const [selectedPhotoIdx, setSelectedPhotoIdx] = useState<number[]>([])
   const [collapsedMeals, setCollapsedMeals] = useState<Set<MealType>>(new Set())
   const [photoGrams, setPhotoGrams] = useState<Record<number, number>>({})
+  const [editingEntry, setEditingEntry] = useState<{ recordId: string; foodId: string; amount: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const fileMealRef = useRef<MealType>('lunch')
 
@@ -307,10 +309,12 @@ export default function CaloriesPage() {
             <div key={meal} className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 gap-3">
                 <button
-                  className="flex items-center gap-1.5 text-left"
+                  className="flex items-center gap-2 text-left flex-1"
                   onClick={() => toggleMealCollapse(meal)}
                 >
-                  <span className="text-base font-bold text-gray-500 w-4 text-center">{isCollapsed ? '+' : '−'}</span>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-colors ${isCollapsed ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-600'}`}>
+                    {isCollapsed ? '+' : '−'}
+                  </span>
                   <span className="font-semibold text-gray-800">{MEAL_LABELS[meal]}</span>
                   <span className="text-xs text-gray-400">{MEAL_TIMES[meal]}</span>
                   {mealCalories > 0 && (
@@ -318,45 +322,67 @@ export default function CaloriesPage() {
                   )}
                 </button>
                 {!isCollapsed && (
-                  <div className="flex items-center gap-3 text-sm font-medium">
-                    <button
-                      onClick={() => openPhotoPicker(meal)}
-                      disabled={photoLoading}
-                      className="text-purple-600 disabled:opacity-40 active:opacity-70"
-                    >
-                      {isUploadingThisMeal ? '识图中…' : '📷 AI识图'}
-                    </button>
-                    <button
-                      onClick={() => setAdding(meal)}
-                      className="text-green-600 active:opacity-70"
-                    >
-                      + 添加
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => openPhotoPicker(meal)}
+                    disabled={photoLoading}
+                    className="text-purple-600 text-sm font-medium disabled:opacity-40 active:opacity-70 flex-shrink-0"
+                  >
+                    {isUploadingThisMeal ? '识图中…' : '📷 AI识图'}
+                  </button>
                 )}
               </div>
               {!isCollapsed && (
                 <div className="border-t border-gray-100">
                   {mealRecords.length === 0 ? (
-                    <p className="text-sm text-gray-400 px-4 py-3">暂未记录</p>
+                    <p className="text-sm text-gray-400 px-4 py-3">暂未记录，点 AI识图 拍照添加</p>
                   ) : (
                     mealRecords.map((record) =>
                       record.entries.map((entry) => {
                         const summary = getEntrySummary(entry, customFoods)
                         if (!summary) return null
+                        const isEditing = editingEntry?.recordId === record.id && editingEntry?.foodId === entry.foodId
                         return (
-                          <div key={`${record.id}-${entry.foodId}`} className="flex items-center justify-between px-4 py-2 border-b border-gray-50 last:border-0">
-                            <div>
-                              <p className="text-sm font-medium text-gray-700">{summary.name}</p>
-                              <p className="text-xs text-gray-400">{entry.amount}{summary.unit}</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <span className="text-sm text-orange-500 font-medium">{Math.round(summary.calories)} kcal</span>
-                                <span className="text-xs text-blue-400 ml-2">{Math.round(summary.protein)}g 蛋白</span>
+                          <div key={`${record.id}-${entry.foodId}`} className="border-b border-gray-50 last:border-0">
+                            <div
+                              className="flex items-center justify-between px-4 py-2 active:bg-gray-50 cursor-pointer"
+                              onClick={() => setEditingEntry(isEditing ? null : { recordId: record.id, foodId: entry.foodId, amount: entry.amount })}
+                            >
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">{summary.name}</p>
+                                <p className="text-xs text-gray-400">{entry.amount}{summary.unit}</p>
                               </div>
-                              <button onClick={() => removeEntry(record.id, entry.foodId)} className="text-gray-300 active:text-red-400">✕</button>
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <span className="text-sm text-orange-500 font-medium">{Math.round(summary.calories)} kcal</span>
+                                  <span className="text-xs text-blue-400 ml-2">{Math.round(summary.protein)}g 蛋白</span>
+                                </div>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); removeEntry(record.id, entry.foodId) }}
+                                  className="text-gray-300 active:text-red-400 p-1"
+                                >✕</button>
+                              </div>
                             </div>
+                            {isEditing && (
+                              <div className="px-4 pb-3 flex items-center gap-2 bg-gray-50">
+                                <span className="text-xs text-gray-500">{summary.unit === '克' || summary.unit === '毫升' ? '克数' : '数量'}</span>
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  className="w-24 border border-gray-300 rounded-lg px-2 py-1 text-sm text-center outline-none focus:border-green-400"
+                                  value={editingEntry!.amount}
+                                  onChange={(e) => setEditingEntry({ ...editingEntry!, amount: Number(e.target.value) })}
+                                />
+                                <button
+                                  onClick={() => {
+                                    if (editingEntry!.amount > 0) {
+                                      updateEntry(editingEntry!.recordId, editingEntry!.foodId, editingEntry!.amount)
+                                    }
+                                    setEditingEntry(null)
+                                  }}
+                                  className="px-3 py-1 bg-green-500 text-white text-sm rounded-lg active:bg-green-600"
+                                >确认</button>
+                              </div>
+                            )}
                           </div>
                         )
                       })

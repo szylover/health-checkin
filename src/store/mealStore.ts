@@ -34,6 +34,7 @@ interface MealStore {
   addRecord: (date: string, meal: MealType, entries: MealEntry[], time?: string) => void
   removeRecord: (id: string) => void
   removeEntry: (recordId: string, foodId: string) => void
+  updateEntry: (recordId: string, foodId: string, newAmount: number) => void
   updateRecord: (id: string, entries: MealEntry[]) => void
   addCustomFood: (food: CustomFood) => void
   getDayNutrition: (date: string) => { calories: number; protein: number; carbs: number; fat: number }
@@ -97,6 +98,15 @@ export const useMealStore = create<MealStore>()(
           records: state.records
             .map((r) => r.id !== recordId ? r : { ...r, entries: r.entries.filter((e) => e.foodId !== foodId) })
             .filter((r) => r.entries.length > 0),
+        }))
+      },
+
+      updateEntry: (recordId, foodId, newAmount) => {
+        set((state) => ({
+          records: state.records.map((r) => r.id !== recordId ? r : {
+            ...r,
+            entries: r.entries.map((e) => e.foodId === foodId ? { ...e, amount: newAmount } : e),
+          }),
         }))
       },
 
