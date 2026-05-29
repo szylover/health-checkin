@@ -130,7 +130,10 @@ export default function CaloriesPage() {
       const base64 = await compressImage(file)
       const resp = await fetch('/api/food-vision', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(import.meta.env.VITE_API_SECRET ? { 'X-API-Secret': import.meta.env.VITE_API_SECRET } : {}),
+        },
         body: JSON.stringify({ image: base64 }),
       })
       if (!resp.ok) throw new Error('识别失败')

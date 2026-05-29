@@ -1,4 +1,14 @@
 module.exports = async function (context, req) {
+  // Validate shared secret
+  const expectedSecret = process.env.API_SECRET;
+  if (expectedSecret) {
+    const provided = req.headers['x-api-secret'];
+    if (provided !== expectedSecret) {
+      context.res = { status: 401, body: { error: '未授权' } };
+      return;
+    }
+  }
+
   const { image } = req.body || {};
 
   if (!image) {
