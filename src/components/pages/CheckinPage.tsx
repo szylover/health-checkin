@@ -2,9 +2,7 @@ import { useMemo, useState } from 'react'
 import PageHeader from '../shared/PageHeader'
 import { useCheckinStore } from '../../store/checkinStore'
 import { EXERCISES, MUSCLE_EMOJIS, MUSCLE_GROUPS, getExercisesByGroup, type MuscleGroup } from '../../data/exercises'
-import { toLocalDateKey } from '../../utils/date'
-
-const todayKey = () => toLocalDateKey()
+import { useTodayKey } from '../../hooks/useTodayKey'
 const DEFAULT_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], exerciseAmounts: {} as Record<string, { sets: number; reps: number }>, note: '' }
 
 // Parse default reps string (e.g. "8-10" → 10, "15" → 15)
@@ -22,7 +20,7 @@ const EQUIPMENT_COLORS: Record<string, string> = {
 }
 
 export default function CheckinPage() {
-  const date = todayKey()
+  const date = useTodayKey()
   const records = useCheckinStore(state => state.records)
   const record = useMemo(() => records.find(r => r.date === date) ?? DEFAULT_RECORD, [records, date])
   const toggleExercise = useCheckinStore((state) => state.toggleExercise)

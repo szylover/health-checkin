@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
 import { useCheckinStore } from '../../store/checkinStore'
 import { useMealStore, calcNutrition } from '../../store/mealStore'
+import { useTodayKey } from '../../hooks/useTodayKey'
 import { toLocalDateKey } from '../../utils/date'
 
 const DAYS = 28
@@ -23,6 +24,7 @@ function getWorkoutCount(record: { completedIds: string[]; selectedExerciseIds: 
 }
 
 export default function ProgressPage() {
+  const today = useTodayKey()
   const records = useCheckinStore((state) => state.records)
   const streak = useCheckinStore((state) => state.getStreak())
   const mealRecords = useMealStore((state) => state.records)
@@ -65,7 +67,7 @@ export default function ProgressPage() {
             ))}
             {dates.map((date) => {
               const count = checkinMap.get(date) ?? 0
-              const isToday = date === toLocalDateKey()
+              const isToday = date === today
               return (
                 <div
                   key={date}
