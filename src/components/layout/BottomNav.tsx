@@ -6,7 +6,6 @@ const tabs = [
   { to: '/checkin', label: TAB_LABELS.checkin, icon: '✅' },
   { to: '/calories', label: TAB_LABELS.calories, icon: '🔥' },
   { to: '/eatwhat', label: '吃啥', icon: '🎲' },
-  { to: '/plan', label: TAB_LABELS.plan, icon: '📋' },
   { to: '/progress', label: TAB_LABELS.progress, icon: '📊' },
 ]
 
