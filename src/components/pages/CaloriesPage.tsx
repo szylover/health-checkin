@@ -47,7 +47,7 @@ export default function CaloriesPage() {
   const allRecords = useMealStore(state => state.records)
   const customFoods = useMealStore(useShallow(state => state.customFoods))
   const addRecord = useMealStore((state) => state.addRecord)
-  const removeRecord = useMealStore((state) => state.removeRecord)
+  const removeEntry = useMealStore((state) => state.removeEntry)
   const addCustomFood = useMealStore((state) => state.addCustomFood)
 
   const records = useMemo(() => allRecords.filter(r => r.date === date), [allRecords, date])
@@ -308,15 +308,15 @@ export default function CaloriesPage() {
             <div key={meal} className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 gap-3">
                 <button
-                  className="flex items-center gap-2 flex-1 text-left"
+                  className="flex items-center gap-1.5 text-left"
                   onClick={() => toggleMealCollapse(meal)}
                 >
+                  <span className="text-base font-bold text-gray-500 w-4 text-center">{isCollapsed ? '+' : '−'}</span>
                   <span className="font-semibold text-gray-800">{MEAL_LABELS[meal]}</span>
                   <span className="text-xs text-gray-400">{MEAL_TIMES[meal]}</span>
                   {mealCalories > 0 && (
                     <span className="text-xs text-orange-500 ml-1">{Math.round(mealCalories)} kcal</span>
                   )}
-                  <span className="text-gray-300 text-xs ml-auto">{isCollapsed ? '▶' : '▼'}</span>
                 </button>
                 {!isCollapsed && (
                   <div className="flex items-center gap-3 text-sm font-medium">
@@ -356,7 +356,7 @@ export default function CaloriesPage() {
                                 <span className="text-sm text-orange-500 font-medium">{Math.round(summary.calories)} kcal</span>
                                 <span className="text-xs text-blue-400 ml-2">{Math.round(summary.protein)}g 蛋白</span>
                               </div>
-                              <button onClick={() => removeRecord(record.id)} className="text-gray-300 active:text-red-400">✕</button>
+                              <button onClick={() => removeEntry(record.id, entry.foodId)} className="text-gray-300 active:text-red-400">✕</button>
                             </div>
                           </div>
                         )

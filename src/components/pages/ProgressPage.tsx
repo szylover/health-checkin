@@ -104,7 +104,7 @@ export default function ProgressPage() {
           </div>
           <div className="flex justify-between text-xs text-gray-400 mt-1">
             <span>0</span>
-            <span>2500 kcal</span>
+            <span className="text-gray-300">— 参考线 2500 kcal</span>
           </div>
         </div>
 
