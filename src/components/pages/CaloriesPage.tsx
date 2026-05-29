@@ -184,10 +184,19 @@ export default function CaloriesPage() {
   const confirmPhotoFoods = () => {
     const entries = selectedPhotoIdx.map((index) => {
       const food = photoFoods[index]
-      const customId = `ai-${Date.now()}-${index}`
+      const normalizedName = food.name.trim()
+
+      // Cache hit: reuse existing customFood by name, skip AI recalculation
+      const existing = customFoods.find((item) => item.name === normalizedName)
+      if (existing) {
+        return { foodId: existing.id, amount: food.grams || 100 }
+      }
+
+      // Cache miss: create and persist new customFood with stable name-based ID
+      const customId = `ai-${normalizedName.replace(/[\s/]/g, '-')}`
       addCustomFood({
         id: customId,
-        name: food.name,
+        name: normalizedName,
         caloriesPer100g: food.grams > 0 ? Math.round(food.calories * 100 / food.grams) : food.calories,
         proteinPer100g: food.grams > 0 ? Math.round(food.protein * 1000 / food.grams) / 10 : food.protein,
         carbsPer100g: food.grams > 0 ? Math.round(food.carbs * 1000 / food.grams) / 10 : food.carbs,
@@ -399,6 +408,7 @@ export default function CaloriesPage() {
                 <div className="space-y-2 overflow-y-auto flex-1">
                   {photoFoods.map((food, index) => {
                     const checked = selectedPhotoIdx.includes(index)
+                    const isCached = customFoods.some((item) => item.name === food.name.trim())
                     return (
                       <button
                         key={`${food.name}-${index}`}
@@ -415,7 +425,12 @@ export default function CaloriesPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-medium text-gray-800">{food.name}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-medium text-gray-800">{food.name}</span>
+                                {isCached && (
+                                  <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-medium">已缓存</span>
+                                )}
+                              </div>
                               <span className="text-sm text-orange-500 font-medium">{Math.round(food.calories)} kcal</span>
                             </div>
                             <p className="text-sm text-gray-500 mt-1">{food.amount} · 约{food.grams || 100}克</p>
