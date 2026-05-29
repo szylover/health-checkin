@@ -83,34 +83,58 @@ export default function ProgressPage() {
 
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <h2 className="font-semibold text-gray-700 mb-3">近7天饮食摄入</h2>
-          <div className="flex items-end gap-2 h-24">
-            {(() => {
-              const maxCal = Math.max(...last7.map((d) => nutritionByDate[d] ?? 0), 100)
-              return last7.map((date) => {
-                const calories = nutritionByDate[date] ?? 0
-                const pct = Math.min((calories / maxCal) * 100, 100)
-                const label = new Date(date).getDate()
-                return (
-                  <div key={date} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="w-full flex flex-col justify-end" style={{ height: '80px' }}>
-                      <div
-                        className="w-full bg-green-500 rounded-t-sm transition-all"
-                        style={{ height: `${pct}%`, minHeight: calories > 0 ? '4px' : '0' }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-400">{label}</span>
+          {(() => {
+            const BENCHMARK = 2000
+            const BAR_H = 100
+            const maxCal = Math.max(...last7.map((d) => nutritionByDate[d] ?? 0), BENCHMARK, 100)
+            const benchmarkPx = (BENCHMARK / maxCal) * BAR_H
+            return (
+              <div>
+                <div className="relative" style={{ height: `${BAR_H}px` }}>
+                  {/* Benchmark dashed line */}
+                  <div
+                    className="absolute left-0 right-0 flex items-center pointer-events-none z-10"
+                    style={{ bottom: `${benchmarkPx}px` }}
+                  >
+                    <div className="flex-1 border-t-2 border-dashed border-orange-300" />
+                    <span className="text-[10px] text-orange-400 ml-1 whitespace-nowrap">目标 {BENCHMARK}</span>
                   </div>
-                )
-              })
-            })()}
-          </div>
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
-            <span>0</span>
-            <span>{Math.max(...last7.map((d) => nutritionByDate[d] ?? 0), 0) > 0
-              ? `${Math.round(Math.max(...last7.map((d) => nutritionByDate[d] ?? 0)))} kcal`
-              : '暂无数据'
-            }</span>
-          </div>
+                  {/* Bars */}
+                  <div className="flex gap-1.5 items-end absolute inset-0 pr-12">
+                    {last7.map((date) => {
+                      const calories = nutritionByDate[date] ?? 0
+                      const barPx = (calories / maxCal) * BAR_H
+                      const isOver = calories > BENCHMARK
+                      return (
+                        <div key={date} className="flex-1 relative h-full">
+                          {calories > 0 && (
+                            <span
+                              className="absolute left-0 right-0 text-center text-[9px] leading-none text-gray-500"
+                              style={{ bottom: `${barPx + 3}px` }}
+                            >
+                              {Math.round(calories)}
+                            </span>
+                          )}
+                          <div
+                            className={`absolute bottom-0 left-0 right-0 rounded-t-sm transition-all ${isOver ? 'bg-orange-400' : 'bg-green-500'}`}
+                            style={{ height: calories > 0 ? `${Math.max(barPx, 3)}px` : '0' }}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {/* Date labels */}
+                <div className="flex gap-1.5 mt-1 pr-12">
+                  {last7.map((date) => (
+                    <div key={date} className="flex-1 text-center">
+                      <span className="text-xs text-gray-400">{new Date(date).getDate()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         <div className="bg-white rounded-xl p-4 shadow-sm">
