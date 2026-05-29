@@ -5,6 +5,7 @@ const tabs = [
   { to: '/', label: TAB_LABELS.home, icon: '🏠', end: true },
   { to: '/checkin', label: TAB_LABELS.checkin, icon: '✅' },
   { to: '/calories', label: TAB_LABELS.calories, icon: '🔥' },
+  { to: '/eatwhat', label: '吃啥', icon: '🎲' },
   { to: '/plan', label: TAB_LABELS.plan, icon: '📋' },
   { to: '/progress', label: TAB_LABELS.progress, icon: '📊' },
 ]
@@ -19,13 +20,13 @@ export default function BottomNav() {
             to={tab.to}
             end={tab.end}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center py-2 gap-0.5 text-xs transition-colors ${
+              `flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors ${
                 isActive ? 'text-green-600' : 'text-gray-400'
               }`
             }
           >
-            <span className="text-xl leading-none">{tab.icon}</span>
-            <span>{tab.label}</span>
+            <span className="text-lg leading-none">{tab.icon}</span>
+            <span className="text-[10px]">{tab.label}</span>
           </NavLink>
         ))}
       </div>

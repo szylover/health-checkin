@@ -20,6 +20,9 @@ export default function CaloriesPage() {
   const [adding, setAdding] = useState<MealType | null>(null)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<{ food: Food; amount: number } | null>(null)
+  const [aiAdvice, setAiAdvice] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiMeal, setAiMeal] = useState<MealType>('dinner')
 
   const filteredFoods = FOODS.filter((f) =>
     f.name.includes(search) || f.id.includes(search.toLowerCase())
@@ -32,6 +35,33 @@ export default function CaloriesPage() {
     setAdding(null)
     setSearch('')
     setSelected(null)
+  }
+
+  async function askAIDietAdvice() {
+    setAiLoading(true)
+    setAiAdvice('')
+    try {
+      const resp = await fetch('/api/diet-advice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          calories: nutrition.calories,
+          protein: nutrition.protein,
+          carbs: nutrition.carbs,
+          fat: nutrition.fat,
+          calorieGoal: 2000,
+          proteinGoal: 120,
+          meal: aiMeal,
+        }),
+      })
+      if (!resp.ok) throw new Error(`请求失败 (${resp.status})`)
+      const data = await resp.json()
+      setAiAdvice(data.advice || 'AI 暂无响应')
+    } catch (e: unknown) {
+      setAiAdvice(`<span style="color:#ef4444">⚠️ ${(e as Error).message}</span>`)
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   return (
@@ -59,6 +89,40 @@ export default function CaloriesPage() {
               <p className="opacity-75 text-xs">脂肪</p>
             </div>
           </div>
+        </div>
+
+        {/* AI diet advice */}
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🤖</span>
+            <span className="font-semibold text-gray-800">AI 饮食建议</span>
+            <div className="ml-auto flex gap-1">
+              {(['breakfast','lunch','dinner','snack'] as MealType[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setAiMeal(m)}
+                  className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
+                    aiMeal === m ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  {MEAL_LABELS[m]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={askAIDietAdvice}
+            disabled={aiLoading}
+            className="w-full py-2.5 bg-purple-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 active:bg-purple-700"
+          >
+            {aiLoading ? '🤖 AI 分析中…' : `根据今日摄入，推荐${MEAL_LABELS[aiMeal]}吃什么`}
+          </button>
+          {aiAdvice && (
+            <div
+              className="mt-3 text-sm text-gray-700 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: aiAdvice }}
+            />
+          )}
         </div>
 
         {/* Meals */}
