@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
 import { useCheckinStore } from '../../store/checkinStore'
 import { useMealStore, calcNutrition } from '../../store/mealStore'
+import { toLocalDateKey } from '../../utils/date'
 
 const DAYS = 28
 
@@ -12,7 +13,7 @@ function getDateRange() {
   for (let i = DAYS - 1; i >= 0; i--) {
     const day = new Date(d)
     day.setDate(d.getDate() - i)
-    dates.push(day.toISOString().split('T')[0])
+    dates.push(toLocalDateKey(day))
   }
   return dates
 }
@@ -64,7 +65,7 @@ export default function ProgressPage() {
             ))}
             {dates.map((date) => {
               const count = checkinMap.get(date) ?? 0
-              const isToday = date === new Date().toISOString().split('T')[0]
+              const isToday = date === toLocalDateKey()
               return (
                 <div
                   key={date}

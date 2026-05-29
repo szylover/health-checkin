@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import PageHeader from '../shared/PageHeader'
 import { useCheckinStore } from '../../store/checkinStore'
 import { EXERCISES, MUSCLE_EMOJIS, MUSCLE_GROUPS, getExercisesByGroup, type MuscleGroup } from '../../data/exercises'
+import { toLocalDateKey } from '../../utils/date'
 
-const todayKey = () => new Date().toISOString().split('T')[0]
+const todayKey = () => toLocalDateKey()
 const DEFAULT_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], exerciseAmounts: {} as Record<string, { sets: number; reps: number }>, note: '' }
 
 // Parse default reps string (e.g. "8-10" → 10, "15" → 15)
