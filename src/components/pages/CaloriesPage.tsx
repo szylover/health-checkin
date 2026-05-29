@@ -342,7 +342,7 @@ export default function CaloriesPage() {
       </div>
 
       {adding && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setAdding(null)}>
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end" onClick={() => setAdding(null)}>
           <div className="bg-white w-full max-w-lg mx-auto rounded-t-2xl p-4 max-h-[80vh] flex flex-col" onClick={(event) => event.stopPropagation()}>
             <h3 className="font-semibold text-gray-800 mb-3">添加{MEAL_LABELS[adding]}食物</h3>
             <input
@@ -401,7 +401,7 @@ export default function CaloriesPage() {
       )}
 
       {(photoLoading || photoFoods.length > 0) && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => !photoLoading && closePhotoModal()}>
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end" onClick={() => !photoLoading && closePhotoModal()}>
           <div className="bg-white w-full max-w-lg mx-auto rounded-t-2xl p-4 max-h-[80vh] flex flex-col" onClick={(event) => event.stopPropagation()}>
             <h3 className="font-semibold text-gray-800 mb-3">识图结果 · {MEAL_LABELS[photoMeal]}</h3>
             {photoLoading ? (
@@ -470,3 +470,4 @@ export default function CaloriesPage() {
     </div>
   )
 }
+
