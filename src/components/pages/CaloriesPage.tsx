@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
 import { useMealStore, type CustomFood, type MealEntry, type MealType } from '../../store/mealStore'
 import { FOODS, type Food } from '../../data/foods'
@@ -43,9 +44,9 @@ function getEntrySummary(entry: MealEntry, customFoods: CustomFood[]) {
 
 export default function CaloriesPage() {
   const date = todayKey()
-  const records = useMealStore((state) => state.getDayRecords(date))
-  const nutrition = useMealStore((state) => state.getDayNutrition(date))
-  const customFoods = useMealStore((state) => state.customFoods)
+  const records = useMealStore(useShallow((state) => state.getDayRecords(date)))
+  const nutrition = useMealStore(useShallow((state) => state.getDayNutrition(date)))
+  const customFoods = useMealStore(useShallow((state) => state.customFoods))
   const addRecord = useMealStore((state) => state.addRecord)
   const removeRecord = useMealStore((state) => state.removeRecord)
   const addCustomFood = useMealStore((state) => state.addCustomFood)

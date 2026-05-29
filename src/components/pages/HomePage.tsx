@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
 import { useCheckinStore } from '../../store/checkinStore'
 import { useMealStore } from '../../store/mealStore'
@@ -8,8 +9,8 @@ const todayKey = () => new Date().toISOString().split('T')[0]
 
 export default function HomePage() {
   const date = todayKey()
-  const record = useCheckinStore((state) => state.getRecord(date))
-  const nutrition = useMealStore((state) => state.getDayNutrition(date))
+  const record = useCheckinStore(useShallow((state) => state.getRecord(date)))
+  const nutrition = useMealStore(useShallow((state) => state.getDayNutrition(date)))
   const streak = useCheckinStore((state) => state.getStreak())
   const navigate = useNavigate()
 

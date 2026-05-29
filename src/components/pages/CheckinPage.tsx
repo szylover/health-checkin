@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
 import { useCheckinStore } from '../../store/checkinStore'
 import { EXERCISES, MUSCLE_EMOJIS, MUSCLE_GROUPS, getExercisesByGroup, type MuscleGroup } from '../../data/exercises'
@@ -15,7 +16,7 @@ const EQUIPMENT_COLORS: Record<string, string> = {
 
 export default function CheckinPage() {
   const date = todayKey()
-  const record = useCheckinStore((state) => state.getRecord(date))
+  const record = useCheckinStore(useShallow((state) => state.getRecord(date)))
   const toggleExercise = useCheckinStore((state) => state.toggleExercise)
   const setDayExercises = useCheckinStore((state) => state.setDayExercises)
   const [selecting, setSelecting] = useState(record.selectedExerciseIds.length === 0)
