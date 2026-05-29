@@ -38,7 +38,7 @@ interface MealStore {
   getDayNutrition: (date: string) => { calories: number; protein: number; carbs: number; fat: number }
 }
 
-function calcNutrition(entries: MealEntry[], customFoods: CustomFood[]) {
+export function calcNutrition(entries: MealEntry[], customFoods: CustomFood[]) {
   let calories = 0
   let protein = 0
   let carbs = 0
@@ -67,6 +67,8 @@ function calcNutrition(entries: MealEntry[], customFoods: CustomFood[]) {
 
   return { calories, protein, carbs, fat }
 }
+
+export const DEFAULT_CHECKIN_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], note: '' }
 
 export const useMealStore = create<MealStore>()(
   persist(

@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
-import { useMealStore, type CustomFood, type MealEntry, type MealType } from '../../store/mealStore'
+import { useMealStore, calcNutrition, type CustomFood, type MealEntry, type MealType } from '../../store/mealStore'
 import { FOODS, type Food } from '../../data/foods'
 import { MEAL_LABELS, MEAL_TIMES } from '../../data/texts'
 
@@ -44,12 +44,17 @@ function getEntrySummary(entry: MealEntry, customFoods: CustomFood[]) {
 
 export default function CaloriesPage() {
   const date = todayKey()
-  const records = useMealStore(useShallow((state) => state.getDayRecords(date)))
-  const nutrition = useMealStore(useShallow((state) => state.getDayNutrition(date)))
-  const customFoods = useMealStore(useShallow((state) => state.customFoods))
+  const allRecords = useMealStore(state => state.records)
+  const customFoods = useMealStore(useShallow(state => state.customFoods))
   const addRecord = useMealStore((state) => state.addRecord)
   const removeRecord = useMealStore((state) => state.removeRecord)
   const addCustomFood = useMealStore((state) => state.addCustomFood)
+
+  const records = useMemo(() => allRecords.filter(r => r.date === date), [allRecords, date])
+  const nutrition = useMemo(() => {
+    const entries = records.flatMap(r => r.entries)
+    return calcNutrition(entries, customFoods)
+  }, [records, customFoods])
 
   const [adding, setAdding] = useState<MealType | null>(null)
   const [search, setSearch] = useState('')

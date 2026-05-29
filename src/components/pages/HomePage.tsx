@@ -1,18 +1,30 @@
+import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
 import { useCheckinStore } from '../../store/checkinStore'
-import { useMealStore } from '../../store/mealStore'
+import { useMealStore, calcNutrition } from '../../store/mealStore'
 import { UI } from '../../data/texts'
 import { useNavigate } from 'react-router-dom'
 
 const todayKey = () => new Date().toISOString().split('T')[0]
+const DEFAULT_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], note: '' }
 
 export default function HomePage() {
   const date = todayKey()
-  const record = useCheckinStore(useShallow((state) => state.getRecord(date)))
-  const nutrition = useMealStore(useShallow((state) => state.getDayNutrition(date)))
-  const streak = useCheckinStore((state) => state.getStreak())
+  const checkinRecords = useCheckinStore(state => state.records)
+  const mealRecords = useMealStore(state => state.records)
+  const customFoods = useMealStore(useShallow(state => state.customFoods))
+  const streak = useCheckinStore(state => state.getStreak())
   const navigate = useNavigate()
+
+  const record = useMemo(
+    () => checkinRecords.find(r => r.date === date) ?? DEFAULT_RECORD,
+    [checkinRecords, date]
+  )
+  const nutrition = useMemo(() => {
+    const entries = mealRecords.filter(r => r.date === date).flatMap(r => r.entries)
+    return calcNutrition(entries, customFoods)
+  }, [mealRecords, customFoods, date])
 
   const total = record.selectedExerciseIds.length
   const done = record.completedIds.filter((id) => record.selectedExerciseIds.includes(id)).length
