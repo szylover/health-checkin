@@ -8,8 +8,9 @@ import { useWorkoutStore } from '../../store/workoutStore'
 import { WORKOUT_TEMPLATES } from '../../data/workouts'
 import { INTENSITY_COLORS, UI } from '../../data/texts'
 import type { Exercise } from '../../data/workouts'
+import { toLocalDateKey } from '../../utils/date'
 
-const todayKey = () => new Date().toISOString().split('T')[0]
+const todayKey = () => toLocalDateKey()
 const DEFAULT_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], exerciseAmounts: {} as Record<string, { sets: number; reps: number }>, note: '' }
 
 // Parse default reps string (e.g. "8-10" → 10, "15" → 15)

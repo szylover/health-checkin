@@ -5,8 +5,9 @@ import { useMealStore, calcNutrition, type CustomFood, type MealEntry, type Meal
 import { FOODS, type Food } from '../../data/foods'
 import { MEAL_LABELS, MEAL_TIMES, SETTINGS_LABELS } from '../../data/texts'
 import { useSettingsStore } from '../../store/settingsStore'
+import { toLocalDateKey } from '../../utils/date'
 
-const todayKey = () => new Date().toISOString().split('T')[0]
+const todayKey = () => toLocalDateKey()
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
 interface VisionFood {
@@ -623,6 +624,7 @@ export default function CaloriesPage() {
     </div>
   )
 }
+<<<<<<< HEAD
 
 function GoalBar({ label, current, goal, unit }: { label: string; current: number; goal: number; unit: string }) {
   const cur = Math.round(current)
@@ -646,3 +648,7 @@ function GoalBar({ label, current, goal, unit }: { label: string; current: numbe
   )
 }
 
+||||||| parent of c448aa4 (Fix date key generation to use local timezone)
+
+=======
+>>>>>>> c448aa4 (Fix date key generation to use local timezone)

@@ -6,6 +6,7 @@ import { useMealStore, calcNutrition } from '../../store/mealStore'
 import { useSettingsStore } from '../../store/settingsStore'
 import { useWeightStore } from '../../store/weightStore'
 import { WEIGHT_LABELS } from '../../data/texts'
+import { toLocalDateKey } from '../../utils/date'
 
 const DAYS = 28
 
@@ -15,7 +16,7 @@ function getDateRange() {
   for (let i = DAYS - 1; i >= 0; i--) {
     const day = new Date(d)
     day.setDate(d.getDate() - i)
-    dates.push(day.toISOString().split('T')[0])
+    dates.push(toLocalDateKey(day))
   }
   return dates
 }
@@ -70,7 +71,7 @@ export default function ProgressPage() {
             ))}
             {dates.map((date) => {
               const count = checkinMap.get(date) ?? 0
-              const isToday = date === new Date().toISOString().split('T')[0]
+              const isToday = date === toLocalDateKey()
               return (
                 <div
                   key={date}
@@ -196,7 +197,7 @@ function WeightCard() {
     [records]
   )
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = toLocalDateKey()
   const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null
   const prev = sorted.length > 1 ? sorted[sorted.length - 2] : null
   const change = latest && prev ? Math.round((latest.weight - prev.weight) * 10) / 10 : null
@@ -287,4 +288,3 @@ function WeightCard() {
     </div>
   )
 }
-

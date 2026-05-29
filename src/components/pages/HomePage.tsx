@@ -5,8 +5,9 @@ import { useCheckinStore } from '../../store/checkinStore'
 import { useMealStore, calcNutrition } from '../../store/mealStore'
 import { UI } from '../../data/texts'
 import { useNavigate } from 'react-router-dom'
+import { toLocalDateKey } from '../../utils/date'
 
-const todayKey = () => new Date().toISOString().split('T')[0]
+const todayKey = () => toLocalDateKey()
 const DEFAULT_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], note: '' }
 
 export default function HomePage() {
