@@ -84,27 +84,32 @@ export default function ProgressPage() {
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <h2 className="font-semibold text-gray-700 mb-3">近7天热量摄入</h2>
           <div className="flex items-end gap-2 h-24">
-            {last7.map((date) => {
+            {(() => {
+              const maxCal = Math.max(...last7.map((d) => nutritionByDate[d] ?? 0), 100)
+              return last7.map((date) => {
                 const calories = nutritionByDate[date] ?? 0
-              const maxCal = 2500
                 const pct = Math.min((calories / maxCal) * 100, 100)
-              const label = new Date(date).getDate()
-              return (
-                <div key={date} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full flex flex-col justify-end" style={{ height: '80px' }}>
-                    <div
-                      className="w-full bg-green-500 rounded-t-sm transition-all"
-                      style={{ height: `${pct}%`, minHeight: calories > 0 ? '4px' : '0' }}
-                    />
+                const label = new Date(date).getDate()
+                return (
+                  <div key={date} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full flex flex-col justify-end" style={{ height: '80px' }}>
+                      <div
+                        className="w-full bg-green-500 rounded-t-sm transition-all"
+                        style={{ height: `${pct}%`, minHeight: calories > 0 ? '4px' : '0' }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-400">{label}</span>
                   </div>
-                  <span className="text-xs text-gray-400">{label}</span>
-                </div>
-              )
-            })}
+                )
+              })
+            })()}
           </div>
           <div className="flex justify-between text-xs text-gray-400 mt-1">
             <span>0</span>
-            <span className="text-gray-300">— 参考线 2500 kcal</span>
+            <span>{Math.max(...last7.map((d) => nutritionByDate[d] ?? 0), 0) > 0
+              ? `${Math.round(Math.max(...last7.map((d) => nutritionByDate[d] ?? 0)))} kcal`
+              : '暂无数据'
+            }</span>
           </div>
         </div>
 
