@@ -4,8 +4,9 @@ import PageHeader from '../shared/PageHeader'
 import { useMealStore, calcNutrition, type CustomFood, type MealEntry, type MealType } from '../../store/mealStore'
 import { FOODS, type Food } from '../../data/foods'
 import { MEAL_LABELS, MEAL_TIMES } from '../../data/texts'
+import { toLocalDateKey } from '../../utils/date'
 
-const todayKey = () => new Date().toISOString().split('T')[0]
+const todayKey = () => toLocalDateKey()
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
 interface VisionFood {
@@ -540,4 +541,3 @@ export default function CaloriesPage() {
     </div>
   )
 }
-
