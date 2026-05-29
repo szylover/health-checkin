@@ -1,10 +1,11 @@
 {
-  "name": "eat-what-api",
+  "name": "health-checkin-api",
   "version": "1.0.0",
   "private": true,
   "engines": {
     "node": ">=18"
   },
+  "main": "src/index.js",
   "dependencies": {
     "@azure/functions": "^4.16.0"
   }
