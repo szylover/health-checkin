@@ -1,0 +1,78 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+export interface CheckinRecord {
+  date: string           // 'YYYY-MM-DD'
+  completedIds: string[] // exercise ids
+  note: string
+}
+
+interface CheckinStore {
+  records: CheckinRecord[]
+  getRecord: (date: string) => CheckinRecord
+  toggleExercise: (date: string, exerciseId: string) => void
+  setNote: (date: string, note: string) => void
+  getStreak: () => number
+}
+
+const today = () => new Date().toISOString().split('T')[0]
+
+export const useCheckinStore = create<CheckinStore>()(
+  persist(
+    (set, get) => ({
+      records: [],
+
+      getRecord: (date) => {
+        return get().records.find((r) => r.date === date) ?? { date, completedIds: [], note: '' }
+      },
+
+      toggleExercise: (date, exerciseId) => {
+        set((state) => {
+          const existing = state.records.find((r) => r.date === date)
+          if (!existing) {
+            return { records: [...state.records, { date, completedIds: [exerciseId], note: '' }] }
+          }
+          const alreadyDone = existing.completedIds.includes(exerciseId)
+          const completedIds = alreadyDone
+            ? existing.completedIds.filter((id) => id !== exerciseId)
+            : [...existing.completedIds, exerciseId]
+          return {
+            records: state.records.map((r) => r.date === date ? { ...r, completedIds } : r),
+          }
+        })
+      },
+
+      setNote: (date, note) => {
+        set((state) => {
+          const existing = state.records.find((r) => r.date === date)
+          if (!existing) {
+            return { records: [...state.records, { date, completedIds: [], note }] }
+          }
+          return { records: state.records.map((r) => r.date === date ? { ...r, note } : r) }
+        })
+      },
+
+      getStreak: () => {
+        const { records } = get()
+        let streak = 0
+        const d = new Date()
+        while (true) {
+          const key = d.toISOString().split('T')[0]
+          const rec = records.find((r) => r.date === key)
+          if (!rec || rec.completedIds.length === 0) {
+            // allow today to be empty and still count streak from yesterday
+            if (key === today() && streak === 0) {
+              d.setDate(d.getDate() - 1)
+              continue
+            }
+            break
+          }
+          streak++
+          d.setDate(d.getDate() - 1)
+        }
+        return streak
+      },
+    }),
+    { name: 'health-checkin' }
+  )
+)
