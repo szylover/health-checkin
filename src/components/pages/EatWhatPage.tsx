@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import PageHeader from '../shared/PageHeader'
 import { MENU_DB, type Dish, type MenuCategory } from '../../data/menuData'
 
@@ -112,40 +112,11 @@ export default function EatWhatPage() {
         }),
       })
       if (!resp.ok) throw new Error(`请求失败 (${resp.status})`)
-
-      const contentType = resp.headers.get('content-type') || ''
-      if (contentType.includes('text/event-stream')) {
-        setAiLoading(false)
-        const reader = resp.body!.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ''
-        let accumulated = ''
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split('\n')
-          buffer = lines.pop() ?? ''
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue
-            const data = line.slice(6).trim()
-            if (data === '[DONE]') continue
-            try {
-              const parsed = JSON.parse(data)
-              if (parsed.text) {
-                accumulated += parsed.text
-                setAiResult(accumulated)
-              }
-            } catch {}
-          }
-        }
-      } else {
-        const data = await resp.json()
-        setAiResult(data.plan || 'AI 暂无响应')
-        setAiLoading(false)
-      }
+      const data = await resp.json()
+      setAiResult(data.plan || 'AI 暂无响应')
     } catch (e: unknown) {
       setAiResult(`<div style="color:#ef4444">⚠️ ${(e as Error).message}</div>`)
+    } finally {
       setAiLoading(false)
     }
   }
@@ -237,9 +208,9 @@ export default function EatWhatPage() {
               <button
                 onClick={askAI}
                 disabled={aiLoading}
-                className="w-full py-3 bg-purple-600 text-white rounded-xl font-medium disabled:opacity-50 active:bg-purple-700"
+                className="w-full py-3 bg-purple-600 text-white rounded-xl font-medium disabled:opacity-60 active:bg-purple-700 transition-opacity"
               >
-                {aiLoading ? '🤖 AI 规划中…' : '🤖 AI 帮我规划出餐'}
+                {aiLoading ? <AiLoadingText /> : '🤖 AI 帮我规划出餐'}
               </button>
             </div>
 
@@ -300,4 +271,17 @@ function CountControl({ label, value, min, max, onChange }: {
       </div>
     </div>
   )
+}
+
+const AI_LOADING_MSGS = [
+  '🤖 AI 思考中…', '🥄 备料清单生成中…', '⏰ 规划时间线…', '✨ 即将完成…'
+]
+
+function AiLoadingText() {
+  const [idx, setIdx] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % AI_LOADING_MSGS.length), 1800)
+    return () => clearInterval(t)
+  }, [])
+  return <span>{AI_LOADING_MSGS[idx]}</span>
 }
