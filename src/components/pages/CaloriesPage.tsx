@@ -5,9 +5,8 @@ import { useMealStore, calcNutrition, type CustomFood, type MealEntry, type Meal
 import { FOODS, type Food } from '../../data/foods'
 import { MEAL_LABELS, MEAL_TIMES, SETTINGS_LABELS } from '../../data/texts'
 import { useSettingsStore } from '../../store/settingsStore'
-import { toLocalDateKey } from '../../utils/date'
+import { useTodayKey } from '../../hooks/useTodayKey'
 
-const todayKey = () => toLocalDateKey()
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
 interface VisionFood {
@@ -45,7 +44,7 @@ function getEntrySummary(entry: MealEntry, customFoods: CustomFood[]) {
 }
 
 export default function CaloriesPage() {
-  const date = todayKey()
+  const date = useTodayKey()
   const allRecords = useMealStore(state => state.records)
   const customFoods = useMealStore(useShallow(state => state.customFoods))
   const addRecord = useMealStore((state) => state.addRecord)
