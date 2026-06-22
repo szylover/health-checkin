@@ -3,7 +3,8 @@ import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
 import { useMealStore, calcNutrition, type CustomFood, type MealEntry, type MealType } from '../../store/mealStore'
 import { FOODS, type Food } from '../../data/foods'
-import { MEAL_LABELS, MEAL_TIMES } from '../../data/texts'
+import { MEAL_LABELS, MEAL_TIMES, SETTINGS_LABELS } from '../../data/texts'
+import { useSettingsStore } from '../../store/settingsStore'
 
 const todayKey = () => new Date().toISOString().split('T')[0]
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -57,6 +58,13 @@ export default function CaloriesPage() {
     return calcNutrition(entries, customFoods)
   }, [records, customFoods])
 
+  const calorieGoal = useSettingsStore((state) => state.calorieGoal)
+  const proteinGoal = useSettingsStore((state) => state.proteinGoal)
+  const setGoals = useSettingsStore((state) => state.setGoals)
+
+  const [editingGoals, setEditingGoals] = useState(false)
+  const [goalDraft, setGoalDraft] = useState({ calorie: String(calorieGoal), protein: String(proteinGoal) })
+
   const [adding, setAdding] = useState<MealType | null>(null)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<{ food: Food; amount: number } | null>(null)
@@ -76,7 +84,8 @@ export default function CaloriesPage() {
   const toggleMealCollapse = (meal: MealType) => {
     setCollapsedMeals(prev => {
       const next = new Set(prev)
-      next.has(meal) ? next.delete(meal) : next.add(meal)
+      if (next.has(meal)) next.delete(meal)
+      else next.add(meal)
       return next
     })
   }
@@ -106,8 +115,8 @@ export default function CaloriesPage() {
           protein: nutrition.protein,
           carbs: nutrition.carbs,
           fat: nutrition.fat,
-          calorieGoal: 2000,
-          proteinGoal: 120,
+          calorieGoal,
+          proteinGoal,
           meal: aiMeal,
         }),
       })
@@ -234,6 +243,16 @@ export default function CaloriesPage() {
     closePhotoModal()
   }
 
+  const saveGoals = () => {
+    setGoals(Number(goalDraft.calorie), Number(goalDraft.protein))
+    setEditingGoals(false)
+  }
+
+  const openGoalEditor = () => {
+    setGoalDraft({ calorie: String(calorieGoal), protein: String(proteinGoal) })
+    setEditingGoals(true)
+  }
+
   return (
     <div>
       <PageHeader title="今日饮食" />
@@ -264,6 +283,70 @@ export default function CaloriesPage() {
               <p className="font-semibold">{Math.round(nutrition.fat)}g</p>
               <p className="opacity-75 text-xs">脂肪</p>
             </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-white/20">
+            {editingGoals ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs opacity-80 w-16">{SETTINGS_LABELS.calorieGoal}</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={goalDraft.calorie}
+                    onChange={(e) => setGoalDraft((d) => ({ ...d, calorie: e.target.value }))}
+                    className="flex-1 px-2 py-1 rounded text-gray-800 text-sm"
+                  />
+                  <span className="text-xs opacity-80">{SETTINGS_LABELS.kcalUnit}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs opacity-80 w-16">{SETTINGS_LABELS.proteinGoal}</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={goalDraft.protein}
+                    onChange={(e) => setGoalDraft((d) => ({ ...d, protein: e.target.value }))}
+                    className="flex-1 px-2 py-1 rounded text-gray-800 text-sm"
+                  />
+                  <span className="text-xs opacity-80">{SETTINGS_LABELS.gramUnit}</span>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={saveGoals}
+                    className="flex-1 py-1.5 bg-white text-green-700 rounded-lg text-sm font-medium active:bg-green-50"
+                  >
+                    {SETTINGS_LABELS.save}
+                  </button>
+                  <button
+                    onClick={() => setEditingGoals(false)}
+                    className="flex-1 py-1.5 bg-white/20 text-white rounded-lg text-sm font-medium active:bg-white/30"
+                  >
+                    {SETTINGS_LABELS.cancel}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs opacity-80">{SETTINGS_LABELS.goalTitle}</span>
+                  <button onClick={openGoalEditor} className="text-xs opacity-90 underline active:opacity-70">
+                    {SETTINGS_LABELS.edit}
+                  </button>
+                </div>
+                <GoalBar
+                  label={SETTINGS_LABELS.calorieGoal}
+                  current={nutrition.calories}
+                  goal={calorieGoal}
+                  unit={SETTINGS_LABELS.kcalUnit}
+                />
+                <GoalBar
+                  label={SETTINGS_LABELS.proteinGoal}
+                  current={nutrition.protein}
+                  goal={proteinGoal}
+                  unit={SETTINGS_LABELS.gramUnit}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -537,6 +620,28 @@ export default function CaloriesPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function GoalBar({ label, current, goal, unit }: { label: string; current: number; goal: number; unit: string }) {
+  const cur = Math.round(current)
+  const pct = goal > 0 ? Math.min((current / goal) * 100, 100) : 0
+  const over = current > goal
+  return (
+    <div>
+      <div className="flex items-center justify-between text-xs mb-1">
+        <span className="opacity-80">{label}</span>
+        <span className="opacity-90">
+          {cur} / {goal} {unit}
+        </span>
+      </div>
+      <div className="h-1.5 rounded-full bg-white/25 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${over ? 'bg-orange-300' : 'bg-white'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   )
 }
