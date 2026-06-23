@@ -27,6 +27,47 @@ export const INTENSITY_COLORS = {
   '高强度': 'text-red-500',
 } as const
 
+export const INSTALL_LABELS = {
+  title: '把健康打卡添加到主屏幕',
+  step1: '点击 Safari 底部的「分享」',
+  step2: '，选择「添加到主屏幕」即可像 App 一样使用。',
+  dismiss: '关闭',
+} as const
+
+export const TIMER_LABELS = {
+  rest: '组间休息',
+  presets: [60, 90, 120] as const,
+  seconds: (s: number) => `${s}秒`,
+  add: '+15',
+  sub: '-15',
+  pause: '暂停',
+  resume: '继续',
+  skip: '跳过',
+  done: '休息结束 💪',
+} as const
+
+export const SETTINGS_LABELS = {
+  goalTitle: '每日目标',
+  edit: '编辑',
+  save: '保存',
+  cancel: '取消',
+  calorieGoal: '热量目标',
+  proteinGoal: '蛋白质目标',
+  kcalUnit: 'kcal',
+  gramUnit: 'g',
+  remaining: (n: number) => (n >= 0 ? `还差 ${n}` : `超出 ${Math.abs(n)}`),
+} as const
+
+export const WEIGHT_LABELS = {
+  title: '体重趋势',
+  current: '当前体重',
+  change: '较上次',
+  placeholder: '输入今日体重 (kg)',
+  record: '记录',
+  empty: '记录体重，查看变化趋势',
+  unit: 'kg',
+} as const
+
 export const UI = {
   sets: (n: number) => `${n}组`,
   reps: (n: number) => `${n}次`,

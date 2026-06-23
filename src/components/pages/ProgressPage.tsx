@@ -1,8 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import PageHeader from '../shared/PageHeader'
 import { useCheckinStore } from '../../store/checkinStore'
 import { useMealStore, calcNutrition } from '../../store/mealStore'
+import { useSettingsStore } from '../../store/settingsStore'
+import { useWeightStore } from '../../store/weightStore'
+import { WEIGHT_LABELS } from '../../data/texts'
 
 const DAYS = 28
 
@@ -26,12 +29,14 @@ export default function ProgressPage() {
   const streak = useCheckinStore((state) => state.getStreak())
   const mealRecords = useMealStore((state) => state.records)
   const customFoods = useMealStore(useShallow((state) => state.customFoods))
+  const calorieGoal = useSettingsStore((state) => state.calorieGoal)
 
   const dates = getDateRange()
   const checkinMap = new Map(records.map((record) => [record.date, getWorkoutCount(record)]))
   const totalCheckins = records.filter((record) => getWorkoutCount(record) > 0).length
 
   const last7 = dates.slice(-7)
+  const last7Key = last7.join()
   const nutritionByDate = useMemo(() => {
     const map: Record<string, number> = {}
     for (const date of last7) {
@@ -39,7 +44,8 @@ export default function ProgressPage() {
       map[date] = calcNutrition(entries, customFoods).calories
     }
     return map
-  }, [mealRecords, customFoods, last7.join()])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mealRecords, customFoods, last7Key])
 
   const last7Avg = last7.reduce((sum, date) => sum + (nutritionByDate[date] ?? 0), 0) / 7
 
@@ -84,7 +90,7 @@ export default function ProgressPage() {
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <h2 className="font-semibold text-gray-700 mb-3">近7天饮食摄入</h2>
           {(() => {
-            const BENCHMARK = 2000
+            const BENCHMARK = calorieGoal
             const BAR_H = 100
             const maxCal = Math.max(...last7.map((d) => nutritionByDate[d] ?? 0), BENCHMARK, 100)
             const benchmarkPx = (BENCHMARK / maxCal) * BAR_H
@@ -137,6 +143,8 @@ export default function ProgressPage() {
           })()}
         </div>
 
+        <WeightCard />
+
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <h2 className="font-semibold text-gray-700 mb-3">最近打卡记录</h2>
           {records.length === 0 ? (
@@ -176,3 +184,107 @@ function StatCard({ label, value, sub, icon }: { label: string; value: string; s
     </div>
   )
 }
+
+function WeightCard() {
+  const records = useWeightStore((state) => state.records)
+  const setWeight = useWeightStore((state) => state.setWeight)
+  const removeWeight = useWeightStore((state) => state.removeWeight)
+  const [input, setInput] = useState('')
+
+  const sorted = useMemo(
+    () => [...records].sort((a, b) => a.date.localeCompare(b.date)),
+    [records]
+  )
+
+  const today = new Date().toISOString().split('T')[0]
+  const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null
+  const prev = sorted.length > 1 ? sorted[sorted.length - 2] : null
+  const change = latest && prev ? Math.round((latest.weight - prev.weight) * 10) / 10 : null
+
+  const recent = sorted.slice(-7)
+  const weights = recent.map((r) => r.weight)
+  const min = weights.length ? Math.min(...weights) : 0
+  const max = weights.length ? Math.max(...weights) : 0
+  const span = max - min || 1
+  const BAR_H = 80
+
+  const handleRecord = () => {
+    const value = Number(input)
+    if (!Number.isFinite(value) || value <= 0) return
+    setWeight(today, value)
+    setInput('')
+  }
+
+  return (
+    <div className="bg-white rounded-xl p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-semibold text-gray-700">{WEIGHT_LABELS.title}</h2>
+        {latest && (
+          <div className="flex items-baseline gap-2">
+            <span className="text-lg font-bold text-gray-800">
+              {latest.weight}
+              <span className="text-xs font-normal text-gray-400 ml-0.5">{WEIGHT_LABELS.unit}</span>
+            </span>
+            {change !== null && change !== 0 && (
+              <span className={`text-xs font-medium ${change > 0 ? 'text-orange-500' : 'text-green-600'}`}>
+                {change > 0 ? '▲' : '▼'} {Math.abs(change)}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {recent.length === 0 ? (
+        <p className="text-sm text-gray-400 mb-3">{WEIGHT_LABELS.empty}</p>
+      ) : (
+        <div className="mb-3">
+          <div className="flex gap-1.5 items-end" style={{ height: `${BAR_H}px` }}>
+            {recent.map((r) => {
+              const barPx = 12 + ((r.weight - min) / span) * (BAR_H - 12)
+              const isToday = r.date === today
+              return (
+                <button
+                  key={r.date}
+                  title={`${r.date} · ${r.weight}${WEIGHT_LABELS.unit}（点击删除）`}
+                  onClick={() => removeWeight(r.date)}
+                  className="flex-1 relative h-full flex flex-col justify-end"
+                >
+                  <span className="text-[9px] leading-none text-gray-500 text-center mb-0.5">{r.weight}</span>
+                  <div
+                    className={`rounded-t-sm ${isToday ? 'bg-green-500' : 'bg-green-300'}`}
+                    style={{ height: `${barPx}px` }}
+                  />
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex gap-1.5 mt-1">
+            {recent.map((r) => (
+              <div key={r.date} className="flex-1 text-center">
+                <span className="text-[10px] text-gray-400">{Number(r.date.split('-')[2])}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <input
+          type="number"
+          inputMode="decimal"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={WEIGHT_LABELS.placeholder}
+          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-green-400"
+        />
+        <button
+          onClick={handleRecord}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium active:bg-green-700"
+        >
+          {WEIGHT_LABELS.record}
+        </button>
+      </div>
+    </div>
+  )
+}
+

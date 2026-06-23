@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import PageHeader from '../shared/PageHeader'
+import RestTimer from '../shared/RestTimer'
 import { useCheckinStore } from '../../store/checkinStore'
+import { TIMER_LABELS } from '../../data/texts'
 import { EXERCISES, MUSCLE_EMOJIS, MUSCLE_GROUPS, getExercisesByGroup, type MuscleGroup } from '../../data/exercises'
 import { useWorkoutStore } from '../../store/workoutStore'
 import { WORKOUT_TEMPLATES } from '../../data/workouts'
@@ -47,6 +49,7 @@ export default function CheckinPage() {
   const [selectedGroups, setSelectedGroups] = useState<MuscleGroup[]>([])
   const [pendingIds, setPendingIds] = useState<string[]>(record.selectedExerciseIds)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [restSeconds, setRestSeconds] = useState<number | null>(null)
   const isSelecting = selecting || record.selectedExerciseIds.length === 0
 
   // Plan state
@@ -297,6 +300,18 @@ export default function CheckinPage() {
                         >+</button>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      <span className="text-xs text-gray-500">⏱️ {TIMER_LABELS.rest}</span>
+                      {TIMER_LABELS.presets.map((sec) => (
+                        <button
+                          key={sec}
+                          onClick={() => setRestSeconds(sec)}
+                          className="px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium active:bg-green-100"
+                        >
+                          {TIMER_LABELS.seconds(sec)}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -430,6 +445,14 @@ export default function CheckinPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {restSeconds !== null && (
+        <RestTimer
+          key={restSeconds}
+          initialSeconds={restSeconds}
+          onClose={() => setRestSeconds(null)}
+        />
       )}
     </div>
   )
