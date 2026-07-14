@@ -8,8 +8,7 @@ import { useWorkoutStore } from '../../store/workoutStore'
 import { WORKOUT_TEMPLATES } from '../../data/workouts'
 import { INTENSITY_COLORS, UI } from '../../data/texts'
 import type { Exercise } from '../../data/workouts'
-
-const todayKey = () => new Date().toISOString().split('T')[0]
+import { useTodayKey } from '../../hooks/useTodayKey'
 const DEFAULT_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], exerciseAmounts: {} as Record<string, { sets: number; reps: number }>, note: '' }
 
 // Parse default reps string (e.g. "8-10" → 10, "15" → 15)
@@ -39,7 +38,7 @@ export default function CheckinPage() {
   const [activeTab, setActiveTab] = useState<'checkin' | 'plan'>('checkin')
 
   // Checkin state
-  const date = todayKey()
+  const date = useTodayKey()
   const records = useCheckinStore(state => state.records)
   const record = useMemo(() => records.find(r => r.date === date) ?? DEFAULT_RECORD, [records, date])
   const toggleExercise = useCheckinStore((state) => state.toggleExercise)

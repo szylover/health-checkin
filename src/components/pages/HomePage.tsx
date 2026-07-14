@@ -5,12 +5,11 @@ import { useCheckinStore } from '../../store/checkinStore'
 import { useMealStore, calcNutrition } from '../../store/mealStore'
 import { UI } from '../../data/texts'
 import { useNavigate } from 'react-router-dom'
-
-const todayKey = () => new Date().toISOString().split('T')[0]
+import { useTodayKey } from '../../hooks/useTodayKey'
 const DEFAULT_RECORD = { date: '', completedIds: [] as string[], selectedExerciseIds: [] as string[], note: '' }
 
 export default function HomePage() {
-  const date = todayKey()
+  const date = useTodayKey()
   const checkinRecords = useCheckinStore(state => state.records)
   const mealRecords = useMealStore(state => state.records)
   const customFoods = useMealStore(useShallow(state => state.customFoods))

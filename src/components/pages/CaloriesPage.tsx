@@ -5,8 +5,8 @@ import { useMealStore, calcNutrition, type CustomFood, type MealEntry, type Meal
 import { FOODS, type Food } from '../../data/foods'
 import { MEAL_LABELS, MEAL_TIMES, SETTINGS_LABELS } from '../../data/texts'
 import { useSettingsStore } from '../../store/settingsStore'
+import { useTodayKey } from '../../hooks/useTodayKey'
 
-const todayKey = () => new Date().toISOString().split('T')[0]
 const MEALS: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
 interface VisionFood {
@@ -44,7 +44,7 @@ function getEntrySummary(entry: MealEntry, customFoods: CustomFood[]) {
 }
 
 export default function CaloriesPage() {
-  const date = todayKey()
+  const date = useTodayKey()
   const allRecords = useMealStore(state => state.records)
   const customFoods = useMealStore(useShallow(state => state.customFoods))
   const addRecord = useMealStore((state) => state.addRecord)
@@ -623,6 +623,7 @@ export default function CaloriesPage() {
     </div>
   )
 }
+<<<<<<< HEAD
 
 function GoalBar({ label, current, goal, unit }: { label: string; current: number; goal: number; unit: string }) {
   const cur = Math.round(current)
@@ -646,3 +647,7 @@ function GoalBar({ label, current, goal, unit }: { label: string; current: numbe
   )
 }
 
+||||||| parent of c448aa4 (Fix date key generation to use local timezone)
+
+=======
+>>>>>>> c448aa4 (Fix date key generation to use local timezone)

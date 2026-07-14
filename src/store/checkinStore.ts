@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { toLocalDateKey } from '../utils/date'
 
 export interface CheckinRecord {
   date: string
@@ -19,7 +20,7 @@ interface CheckinStore {
   getStreak: () => number
 }
 
-const today = () => new Date().toISOString().split('T')[0]
+const today = () => toLocalDateKey()
 
 export const useCheckinStore = create<CheckinStore>()(
   persist(
@@ -87,7 +88,7 @@ export const useCheckinStore = create<CheckinStore>()(
         let streak = 0
         const d = new Date()
         while (true) {
-          const key = d.toISOString().split('T')[0]
+          const key = toLocalDateKey(d)
           const rec = records.find((r) => r.date === key)
           if (!rec || (rec.completedIds.length === 0 && rec.selectedExerciseIds.length === 0)) {
             if (key === today() && streak === 0) {
