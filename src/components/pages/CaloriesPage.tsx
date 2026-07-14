@@ -623,8 +623,6 @@ export default function CaloriesPage() {
     </div>
   )
 }
-<<<<<<< HEAD
-
 function GoalBar({ label, current, goal, unit }: { label: string; current: number; goal: number; unit: string }) {
   const cur = Math.round(current)
   const pct = goal > 0 ? Math.min((current / goal) * 100, 100) : 0
@@ -646,8 +644,3 @@ function GoalBar({ label, current, goal, unit }: { label: string; current: numbe
     </div>
   )
 }
-
-||||||| parent of c448aa4 (Fix date key generation to use local timezone)
-
-=======
->>>>>>> c448aa4 (Fix date key generation to use local timezone)
